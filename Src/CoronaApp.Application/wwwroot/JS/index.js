@@ -51,35 +51,29 @@ let AddNewPatient = function AddNewPatientToDB(patientID) {
     });
     oReq.open("POST", url, true);
     let jsonString = JSON.stringify(patientID);
+    oReq.setRequestHeader("Content-Type", "application/json");
     oReq.send(jsonString);
 }
 let addPatient = function addAPatient(patientID) {
-    let url = urlPath + patientID;
+    let url = urlPath + "/"+ patientID;
     let promise = new Promise(function (resolve, reject) {
         oReq.onreadystatechange = function () {
             if (this.readyState === 4 && this.status === 200) {
                 resolve(JSON.parse(this.responseText));
             }
             if (this.readyState === 4 && this.status !== 200) {
-                reject(console.log(""));
-                
+                reject();
+
             }
         }
     }).then(
         result => {
-            if (result == null) {
-                AddNewPatient(patientID);
-            }
-            else {
-                for (let i = 0; i < result.path.length; i++) {
-                    addPath(result.path[i]);
-                }
+            for (let i = 0; i < result.path.length; i++) {
+                addPath(result.path[i]);
             }
         },
-        reject => alert("Bad Response")
-    ).catch(e => {
-        console.log(e);
-    });
+        reject => AddNewPatient(patientID)
+    );
     oReq.open("Get", url, true);
     oReq.send();
     changeHTML();
@@ -108,7 +102,7 @@ let fillCell2 = function fillFirstCell(newCell, patientPath, numOfRows) {
 };
 
 let fillCell3 = function fillFirstCell(newCell, patientPath, numOfRows) {
-    const string = document.createTextNode(patientPath.location);
+    const string = document.createTextNode(patientPath.locationOfPerson);
     newCell.appendChild(string);
 };
 
@@ -166,8 +160,30 @@ let addPath = function addAPathToAPatient(patientPath) {
     addCells(newRow, numOfRows, patientPath);
 };
 
+let DeletePaths = function savePathsOfPatient(path) {
+    let url = urlPath + "/" + inputedPatientsID.innerText;
+    let promise = new Promise(function (resolve, reject) {
+        oReq.onreadystatechange = function () {
+            if (this.readyState === 4 && this.status === 200) {
+                resolve();
+            }
+            if (this.readyState === 4 && this.status !== 200) {
+                reject();
+            }
+        }
+    }).then(
+        result => console.log("Worked"),
+        reject => alert("Bad Response")
+    );
+    oReq.open("DELETE", url, true);
+    oReq.setRequestHeader("Content-Type", "application/json");
+    let jsonString = JSON.stringify(path);
+    console.log(jsonString);
+    oReq.send(jsonString);
+}
+
 let addPathObject = function addANewObjectToPatientPathArray(path) {
-    let url = urlPath + inputedPatientsID.value;
+    let url = urlPath + "/" + inputedPatientsID.innerText;
     let promise = new Promise(function (resolve, reject) {
         oReq.onreadystatechange = function () {
             if (this.readyState === 4) {
@@ -189,12 +205,13 @@ let addPathObject = function addANewObjectToPatientPathArray(path) {
 };
 
 let removePath = function removeApathFromAPatient(rowID) {
+    var row = dataTable.rows.item(rowID);
+    patientsPath.city = row.cells.item(2).firstChild.innerText;
+    patientsPath.locationOfPerson = row.cells.item(3).firstChild.innerText;
+    patientsPath.startDate = row.cells.item(0).firstChild.innerText;
+    patientsPath.endDate = row.cells.item(1).firstChild.innerText;
     let removedRow = dataTable.deleteRow(rowID);
-    patientPath.startDate = removedRow.cells[0].innerHTML;
-    patientPath.endDate = removedRow.cells[1].innerHTML;
-    patientPath.city = removedRow.cells[2].innerHTML;
-    patientPath.locationOfPerson = removedRow.cells[3].innerHTML;
-    DeletePaths(patientPath);
+    DeletePaths(patientsPath);
 };
 
 let oldPath = function setsClickForDeleteButton(deleted) {
@@ -210,28 +227,6 @@ let removeDataTable = function removeDataTableFromDisplay() {
     }
 };
 
-let DeletePaths = function savePathsOfPatient(path) {
-    let url = urlPath + inputedPatientsID.value;
-    let promise = new Promise(function (resolve, reject) {
-        oReq.onreadystatechange = function () {
-            if (this.readyState === 4) {
-                resolve();
-            }
-            if (this.readyState === 4 && this.status !== 200) {
-                reject();
-            }
-        }
-    }).then(
-        result => console.log("Worked"),
-        reject => alert("Bad Response")
-    );
-    oReq.open("DELETE", url, true);
-    oReq.setRequestHeader("Content-Type", "application/json");
-    let jsonString = JSON.stringify(path);
-    console.log(jsonString);
-    oReq.send(jsonString);
-}
-
 newPatient.addEventListener('click', function () {
     if (patientID.value.trim() === '') {
         alert('No ID Inputed');
@@ -242,13 +237,13 @@ newPatient.addEventListener('click', function () {
 });
 
 newPath.addEventListener('click', function () {
-    patientPath.startDate = startDateOfPath.value;
-    patientPath.endDate = endDateOfPath.value;
-    patientPath.city = cityOfPath.value;
-    patientPath.locationOfPerson = locationOfPath.value;
-    let patientPath = addPathObject(patientPath);
+    patientsPath.startDate = startDateOfPath.value;
+    patientsPath.endDate = endDateOfPath.value;
+    patientsPath.city = cityOfPath.value;
+    patientsPath.locationOfPerson = locationOfPath.value;
+    let patientPath = addPathObject(patientsPath);
     deleteInput();
-    addPath(patientPath);
+    addPath(patientsPath);
 });
 
 switchPatient.addEventListener('click', function () {
@@ -262,6 +257,5 @@ switchPatient.addEventListener('click', function () {
     switchPatient.setAttribute("className", 1);
     removeDataTable();
     deleteInput();
-    savePaths();
 });
 
